@@ -1,0 +1,256 @@
+EX NO:09  COMPLETE SQL TERMINAL EXECUTION
+
+
+1. FUNCTION: Total Passenger Count
+
+
+SQL> CREATE OR REPLACE FUNCTION get_passenger_count
+  2  RETURN NUMBER
+  3  IS
+  4      v_count NUMBER;
+  5  BEGIN
+  6      SELECT COUNT(*) INTO v_count FROM PASSENGER;
+  7      RETURN v_count;
+  8  END;
+  9  /
+
+Function created.
+
+SQL> SELECT get_passenger_count FROM dual;
+
+GET_PASSENGER_COUNT
+-------------------
+6
+
+1 row selected.
+
+
+2. FUNCTION: Return Booking Data (REFCURSOR)
+
+SQL> CREATE OR REPLACE FUNCTION get_booking_data
+  2  RETURN SYS_REFCURSOR
+  3  IS
+  4      c SYS_REFCURSOR;
+  5  BEGIN
+  6      OPEN c FOR
+  7          SELECT BOOKING_ID, SEAT_NO, STATUS
+  8          FROM BOOKING;
+  9      RETURN c;
+ 10  END;
+ 11  /
+
+Function created.
+
+SQL> SELECT get_booking_data FROM dual;
+
+GET_BOOKING_DATA
+----------------
+CURSOR STATEMENT : 1
+
+1 row selected.
+
+
+3. FUNCTION: Count Bookings (FOR LOOP)
+
+SQL> CREATE OR REPLACE FUNCTION count_bookings
+  2  RETURN NUMBER
+  3  IS
+  4      CURSOR c IS SELECT BOOKING_ID FROM BOOKING;
+  5      v_count NUMBER := 0;
+  6  BEGIN
+  7      FOR rec IN c LOOP
+  8          v_count := v_count + 1;
+  9      END LOOP;
+ 10      RETURN v_count;
+ 11  END;
+ 12  /
+
+Function created.
+
+SQL> SELECT count_bookings FROM dual;
+
+COUNT_BOOKINGS
+--------------
+6
+
+1 row selected.
+
+
+4. FUNCTION: Count Seats Above Value
+
+SQL> CREATE OR REPLACE FUNCTION count_seat_above(p_val NUMBER)
+  2  RETURN NUMBER
+  3  IS
+  4      CURSOR c(x NUMBER) IS
+  5          SELECT SEAT_NO FROM BOOKING WHERE SEAT_NO > x;
+  6      v_count NUMBER := 0;
+  7  BEGIN
+  8      FOR rec IN c(p_val) LOOP
+  9          v_count := v_count + 1;
+ 10      END LOOP;
+ 11      RETURN v_count;
+ 12  END;
+ 13  /
+
+Function created.
+
+SQL> SELECT count_seat_above(3) FROM dual;
+
+COUNT_SEAT_ABOVE(3)
+-------------------
+3
+
+1 row selected.
+
+
+5. PROCEDURE: Add Passenger
+
+SQL> CREATE OR REPLACE PROCEDURE add_passenger
+  2  (
+  3      p_id NUMBER,
+  4      p_name VARCHAR2
+  5  )
+  6  IS
+  7  BEGIN
+  8      INSERT INTO PASSENGER (PASSENGER_ID, NAME)
+  9      VALUES (p_id, p_name);
+ 10      COMMIT;
+ 11  END;
+ 12  /
+
+Procedure created.
+
+SQL> EXEC add_passenger(10,'Rahul');
+
+
+PL/SQL procedure successfully completed.
+
+
+6. PROCEDURE: Delete Passenger
+
+
+SQL> CREATE OR REPLACE PROCEDURE delete_passenger (
+  2      p_id IN NUMBER
+  3  ) IS
+  4  BEGIN
+  5      DELETE FROM PASSENGER
+  6      WHERE PASSENGER_ID = p_id;
+  7      COMMIT;
+  8      DBMS_OUTPUT.PUT_LINE('Passenger ' || p_id || ' deleted successfully.');
+  9  END;
+ 10  /
+
+Procedure created.
+
+SQL> SET SERVEROUTPUT ON;
+
+System altered.
+
+SQL> EXEC delete_passenger(10);
+
+Passenger 10 deleted successfully.
+
+PL/SQL procedure successfully completed.
+
+
+7. PROCEDURE: Payment Count (OUT)
+
+SQL> CREATE OR REPLACE PROCEDURE get_payment_count(p_out OUT NUMBER)
+  2  IS
+  3  BEGIN
+  4      SELECT COUNT(*) INTO p_out FROM PAYMENT;
+  5  END;
+  6  /
+
+Procedure created.
+
+SQL> VARIABLE x NUMBER;
+
+SQL> EXEC get_payment_count(:x);
+
+PL/SQL procedure successfully completed.
+
+SQL> PRINT x;
+
+         X
+----------
+
+ 8. FUNCTION WITH OUT PARAMETER
+
+SQL> CREATE OR REPLACE FUNCTION sample_out(p_out OUT NUMBER)
+  2  RETURN NUMBER
+  3  IS
+  4  BEGIN
+  5      p_out := 100;
+  6      RETURN 1;
+  7  END;
+  8  /
+
+Function created.
+
+SQL> DECLARE
+  2      v_out NUMBER;
+  3      v_res NUMBER;
+  4  BEGIN
+  5      v_res := sample_out(v_out);
+  6      DBMS_OUTPUT.PUT_LINE('OUT = ' || v_out);
+  7      DBMS_OUTPUT.PUT_LINE('RETURN = ' || v_res);
+  8  END;
+  9  /
+
+OUT = 100
+RETURN = 1
+
+PL/SQL procedure successfully completed.
+
+9. FUNCTION INSIDE SELECT
+
+SQL> SELECT PASSENGER_ID, get_passenger_count
+  2  FROM PASSENGER
+  3  WHERE PASSENGER_ID <= 2;
+
+PASSENGER_ID GET_PASSENGER_COUNT
+------------ -------------------
+1            6
+2            6
+
+2 rows selected.
+
+
+A) Write a PL/SQL procedure to return the department name with the maximum number of employees.
+
+PL/SQL Procedure Code
+
+
+CREATE OR REPLACE PROCEDURE Get_Max_Emp_Dept (
+    p_dept_name OUT VARCHAR2
+) AS
+BEGIN
+    -- Query to find the department with the most employees
+    SELECT d.department_name
+    INTO p_dept_name
+    FROM departments d
+    JOIN employees e ON d.department_id = e.department_id
+    GROUP BY d.department_name
+    ORDER BY COUNT(e.employee_id) DESC
+    FETCH FIRST 1 ROW ONLY;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        p_dept_name := 'No departments found';
+    WHEN OTHERS THEN
+        p_dept_name := 'Error: ' || SQLERRM;
+END;
+/
+
+How to Execute the Procedure
+
+SET SERVEROUTPUT ON;
+DECLARE
+    v_name VARCHAR2(100);
+BEGIN
+    Get_Max_Emp_Dept(v_name);
+    DBMS_OUTPUT.PUT_LINE('Department with maximum employees: ' || v_name);
+END;
+/
+
