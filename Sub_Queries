@@ -1,0 +1,256 @@
+Name.      : Raghul S
+Year | Sec : II CSE C
+Roll No    : 24BCS173
+EXP-5      : Implementation of Subqueries
+
+
+1. Find bookings whose seat number is greater than the average seat number of that passenger (Correlated Subquery).
+
+SQL> SELECT passenger_id, seat_no
+  2  FROM Booking B
+  3  WHERE seat_no >
+  4        (SELECT AVG(seat_no)
+  5         FROM Booking
+  6         WHERE passenger_id = B.passenger_id);
+
+PASSENGER_ID    SEAT_NO
+------------ ----------
+           2          5
+           2          5
+
+2. Find passengers whose age is greater than the average age of all passengers.
+
+SQL> SELECT passenger_id, name, age
+  2  FROM Passenger
+  3  WHERE age >
+  4        (SELECT AVG(age) FROM Passenger);
+
+PASSENGER_ID
+------------
+NAME
+--------------------------------------------------------------------------------
+       AGE
+----------
+           2
+Arun
+        22
+
+3. Display passengers whose total bookings are greater than 1 using subquery in FROM clause.
+
+SQL> SELECT *
+  2  FROM (
+  3        SELECT passenger_id, COUNT(*) AS total_bookings
+  4        FROM Booking
+  5        GROUP BY passenger_id
+  6       )
+  7  WHERE total_bookings > 1;
+
+PASSENGER_ID TOTAL_BOOKINGS
+------------ --------------
+           2              3
+
+4) Find buses with capacity > average
+
+SQL> SELECT bus_id
+  2  FROM Bus
+  3  WHERE capacity >
+  4        (SELECT AVG(capacity) FROM Bus);
+
+    BUS_ID
+----------
+         1
+
+5) Find buses with capacity < average
+
+SQL> SELECT bus_id
+  2  FROM Bus
+  3  WHERE capacity <
+  4        (SELECT AVG(capacity) FROM Bus);
+
+    BUS_ID
+----------
+          maximum capacity
+
+SQL> SELECT bus_id
+  2  FROM Bus
+  3  WHERE capacity >=
+  4        (SELECT MAX(capacity) FROM Bus);
+
+    BUS_ID
+----------
+         1
+
+7) Capacity  minimum capacity
+
+SQL> SELECT bus_id
+  2  FROM Bus
+  3  WHERE capacity <=
+  4        (SELECT MIN(capacity) FROM Bus);
+
+    BUS_ID
+----------
+         2
+
+8) Capacity = maximum capacity
+
+SQL> SELECT bus_id
+  2  FROM Bus
+  3  WHERE capacity =
+  4        (SELECT MAX(capacity) FROM Bus);
+
+    BUS_ID
+ maximum capacity
+
+SQL> SELECT bus_id
+  2  FROM Bus
+  3  WHERE capacity !=
+  4        (SELECT MAX(capacity) FROM Bus);
+
+    BUS_ID
+----------
+         2
+
+10) Passengers who have bookings (IN)
+
+SQL> SELECT passenger_id
+  2  FROM Passenger
+  3  WHERE passenger_id IN
+  4        (SELECT passenger_id FROM Booking);
+
+PASSENGER_ID
+------------
+           2
+           3
+
+11) Passengers without bookings (NOT IN)
+
+SQL> SELECT P.passenger_id
+  2  FROM Passenger P
+  3  WHERE NOT EXISTS
+  4        (
+  5          SELECT 1
+  6          FROM Booking B
+  7          WHERE B.passenger_id = P.passenger_id
+  8        );
+
+PASSENGER_ID
+------------
+           5
+
+12) Buses with capacity greater than ALL others
+
+SQL>    SELECT bus_id
+  2  FROM Bus
+  3  WHERE capacity >
+  4        ALL (SELECT capacity FROM Bus WHERE bus_id <> 1);
+
+    BUS_ID
+----------
+         1
+
+13) Buses with capacity less than ALL others
+
+SQL> SELECT bus_id
+  2  FROM Bus
+  3  WHERE capacity <=
+  4        ALL (SELECT capacity FROM Bus);
+
+    BUS_ID
+----------
+         2
+
+14) Passenger age > SUM of seat numbers
+
+SQL> SELECT passenger_id
+  2  FROM Passenger
+  3  WHERE age >
+  4        (SELECT NVL(SUM(seat_no),0) FROM Booking);
+
+PASSENGER_ID
+------------
+           2
+           3
+           5
+
+15) Passenger age < SUM of seat numbers
+
+
+SQL> SELECT passenger_id
+  2  FROM Passenger
+  3  WHERE age >
+  4        (SELECT NVL(SUM(seat_no),0) FROM Booking);
+
+PASSENGER_ID
+------------
+           2
+           3
+           5
+16) Age = ANY age
+
+SQL> SELECT passenger_id
+  2  FROM Passenger
+  3  WHERE age =
+  4        ANY (SELECT age FROM Passenger);
+
+PASSENGER_ID
+------------
+           2
+           3
+           5
+
+17) Age < ANY age
+
+SQL> SELECT passenger_id
+  2  FROM Passenger
+  3  WHERE age <
+  4        ANY (SELECT age FROM Passenger);
+
+PASSENGER_ID
+------------
+           3
+           2
+
+18) Age > ANY age
+
+SQL> SELECT passenger_id
+  2  FROM Passenger
+  3  WHERE age >
+  4        ANY (SELECT age FROM Passenger);
+
+PASSENGER_ID
+------------
+           5
+           2
+
+19) WITH clause buses above average capacity
+
+SQL> WITH avg_capacity AS
+  2  (
+  3    SELECT AVG(capacity) AS avg_cap
+  4    FROM Bus
+  5  )
+  6  SELECT bus_id, capacity
+  7  FROM Bus, avg_capacity
+  8  WHERE capacity > avg_cap;
+
+    BUS_ID   CAPACITY
+---------- ----------
+         1         50
+
+20) CASE with subquery classify buses
+
+SQL> SELECT bus_id,
+  2         capacity,
+  3         CASE
+  4           WHEN capacity >
+  5                (SELECT AVG(capacity) FROM Bus)
+  6           THEN 'High Capacity'
+  7           ELSE 'Low Capacity'
+  8         END AS capacity_status
+  9  FROM Bus;
+
+    BUS_ID   CAPACITY CAPACITY_STAT
+---------- ---------- -------------
+         1         50 High Capacity
+         2         45 Low Capacity
+
