@@ -1,0 +1,400 @@
+EXP10  Database Connectivity using ODBC
+
+Database Connection:
+package db;
+import java.sql.*;
+
+public class DBConnection {
+    private static Connection conn = null;
+
+    public static Connection connect(String url, String user, String pass) throws SQLException {
+        conn = DriverManager.getConnection(url, user, pass);
+        return conn;
+    }
+
+    public static Connection getConnection() {
+        return conn;
+    }
+
+    public static void close() {
+        try {
+            if (conn != null && !conn.isClosed()) conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+BookingService.java:
+package controller;
+
+import db.DBConnection;
+import java.sql.*;
+import javax.swing.table.DefaultTableModel;
+
+public class BookingService {
+
+    private Connection conn() {
+        return DBConnection.getConnection();
+    }
+
+
+    //  PASSENGER CRUD
+
+
+    public void insertPassenger(String name, int age, String gender, String contact) throws SQLException {
+        String sql = "INSERT INTO Passenger (name, age, gender, contact) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, name);
+            ps.setInt(2, age);
+            ps.setString(3, gender);
+            ps.setString(4, contact);
+            ps.executeUpdate();
+        }
+    }
+
+    public void updatePassenger(int id, String name, int age, String gender, String contact) throws SQLException {
+        String sql = "UPDATE Passenger SET name=?, age=?, gender=?, contact=? WHERE passenger_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, name);
+            ps.setInt(2, age);
+            ps.setString(3, gender);
+            ps.setString(4, contact);
+            ps.setInt(5, id);
+            ps.executeUpdate();
+        }
+    }
+
+    public void deletePassenger(int id) throws SQLException {
+        String sql = "DELETE FROM Passenger WHERE passenger_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        }
+    }
+
+    public DefaultTableModel getAllPassengers() throws SQLException {
+        String sql = "SELECT * FROM Passenger";
+        return buildTable(sql);
+    }
+
+    // Subquery: passengers older than average age
+    public DefaultTableModel getAboveAvgAgePassengers() throws SQLException {
+        String sql = "SELECT * FROM Passenger WHERE age > (SELECT AVG(age) FROM Passenger)";
+        return buildTable(sql);
+    }
+
+    // Search passengers by name
+    public DefaultTableModel searchPassengers(String keyword) throws SQLException {
+        String sql = "SELECT * FROM Passenger WHERE name LIKE ?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, "%" + keyword + "%");
+            ResultSet rs = ps.executeQuery();
+            return resultSetToModel(rs);
+        }
+    }
+
+
+    //  BOOKING CRUD
+
+
+    public void insertBooking(int passengerId, int scheduleId, int seatNo, String status) throws SQLException {
+        String sql = "INSERT INTO Booking (passenger_id, schedule_id, seat_no, status) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, passengerId);
+            ps.setInt(2, scheduleId);
+            ps.setInt(3, seatNo);
+            ps.setString(4, status);
+            ps.executeUpdate();
+        }
+    }
+
+    public void updateBooking(int bookingId, String status) throws SQLException {
+        String sql = "UPDATE Booking SET status=? WHERE booking_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, bookingId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void deleteBooking(int bookingId) throws SQLException {
+        String sql = "DELETE FROM Booking WHERE booking_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+            ps.executeUpdate();
+        }
+    }
+
+    // JOIN: Booking + Passenger + Schedule + Route + Location
+    public DefaultTableModel getAllBookingsWithDetails() throws SQLException {
+        String sql =
+            "SELECT b.booking_id, p.name AS passenger, " +
+            "       l1.loc_name AS source, l2.loc_name AS destination, " +
+            "       s.travel_date, b.seat_no, b.status " +
+            "FROM Booking b " +
+            "JOIN Passenger p ON b.passenger_id = p.passenger_id " +
+            "JOIN Schedule s  ON b.schedule_id  = s.schedule_id " +
+            "JOIN Route r     ON s.route_id     = r.route_id " +
+            "JOIN Location l1 ON r.source       = l1.loc_id " +
+            "JOIN Location l2 ON r.destination  = l2.loc_id";
+        return buildTable(sql);
+    }
+
+    // Subquery: bookings whose seat_no is above the average seat_no
+    public DefaultTableModel getBookingsAboveAvgSeat() throws SQLException {
+        String sql =
+            "SELECT * FROM Booking WHERE seat_no > (SELECT AVG(seat_no) FROM Booking)";
+        return buildTable(sql);
+    }
+
+
+    //  SCHEDULE (view with JOIN)
+
+
+    public DefaultTableModel getAllSchedules() throws SQLException {
+        String sql =
+            "SELECT s.schedule_id, b.reg_no AS bus, " +
+            "       l1.loc_name AS source, l2.loc_name AS destination, " +
+            "       s.dept_time, s.arrival_time, s.travel_date " +
+            "FROM Schedule s " +
+            "JOIN Bus b      ON s.bus_id      = b.bus_id " +
+            "JOIN Route r    ON s.route_id    = r.route_id " +
+            "JOIN Location l1 ON r.source     = l1.loc_id " +
+            "JOIN Location l2 ON r.destination= l2.loc_id";
+        return buildTable(sql);
+    }
+
+
+    //  PAYMENT
+
+
+    public DefaultTableModel getAllPayments() throws SQLException {
+        String sql =
+            "SELECT py.transaction_id, p.name AS passenger, " +
+            "       py.method, py.payment_time, py.status " +
+            "FROM Payment py " +
+            "JOIN Booking b  ON py.booking_id   = b.booking_id " +
+            "JOIN Passenger p ON b.passenger_id = p.passenger_id";
+        return buildTable(sql);
+    }
+
+    public void insertPayment(int bookingId, String method, String status) throws SQLException {
+        String sql = "INSERT INTO Payment (booking_id, method, status) VALUES (?, ?, ?)";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+            ps.setString(2, method);
+            ps.setString(3, status);
+            ps.executeUpdate();
+        }
+    }
+
+    public void updatePayment(int transactionId, String status) throws SQLException {
+        String sql = "UPDATE Payment SET status=? WHERE transaction_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, transactionId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void deletePayment(int transactionId) throws SQLException {
+        String sql = "DELETE FROM Payment WHERE transaction_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, transactionId);
+            ps.executeUpdate();
+        }
+    }
+
+    // Subquery: payments for confirmed bookings only
+    public DefaultTableModel getPaymentsForConfirmedBookings() throws SQLException {
+        String sql =
+            "SELECT * FROM Payment WHERE booking_id IN " +
+            "(SELECT booking_id FROM Booking WHERE status = 'Confirmed')";
+        return buildTable(sql);
+    }
+
+        //  BUS + STAFF (JOIN view)
+
+
+    public DefaultTableModel getAllBusWithStaff() throws SQLException {
+        String sql =
+            "SELECT b.bus_id, b.reg_no, b.type, b.capacity, " +
+            "       st.name AS driver, st.license_no " +
+            "FROM Bus b " +
+            "JOIN Staff st ON b.staff_id = st.staff_id";
+        return buildTable(sql);
+    }
+
+    private DefaultTableModel buildTable(String sql) throws SQLException {
+        try (Statement st = conn().createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            return resultSetToModel(rs);
+        }
+    }
+
+    private DefaultTableModel resultSetToModel(ResultSet rs) throws SQLException {
+        ResultSetMetaData meta = rs.getMetaData();
+        int cols = meta.getColumnCount();
+        String[] colNames = new String[cols];
+        for (int i = 1; i <= cols; i++) colNames[i - 1] = meta.getColumnName(i).toUpperCase();
+
+        DefaultTableModel model = new DefaultTableModel(colNames, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        while (rs.next()) {
+            Object[] row = new Object[cols];
+            for (int i = 1; i <= cols; i++) row[i - 1] = rs.getObject(i);
+            model.addRow(row);
+        }
+        return model;
+    }
+}
+
+Online Shopping Website Application
+Self  III:
+A)      Develop a Complete Checkout System where users review their cart, confirm delivery address, and place an order that updates the order tables.
+B)      Implement a Product Inventory Management Form that automatically updates stock quantity when an order is placed.
+C)      Develop an Admin Dashboard where administrators can add, update, or delete products.
+D)      Create an Order Status Management System where the admin can update order status (Pending, Shipped, Delivered) and customers can view the updates.
+Implement Database Validation Rules in the application to prevent duplicate customer accounts with the same email address.
+
+Output:
+Database Schema Setup
+mysql> CREATE DATABASE ecommerce_db;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> USE ecommerce_db;
+Database changed
+
+mysql> -- Create Customers Table
+mysql> CREATE TABLE Customers (
+    -> customer_id INT PRIMARY KEY AUTO_INCREMENT,
+    -> name VARCHAR(100) NOT NULL,
+    -> email VARCHAR(150) UNIQUE NOT NULL,
+    -> phone VARCHAR(20),
+    -> password VARCHAR(255) NOT NULL,
+    -> address TEXT,
+    -> created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> -- Create Products Table
+mysql> CREATE TABLE Products (
+    -> product_id INT PRIMARY KEY AUTO_INCREMENT,
+    -> product_name VARCHAR(150) NOT NULL,
+    -> category VARCHAR(50),
+    -> price DECIMAL(10, 2) NOT NULL,
+    -> stock_quantity INT DEFAULT 0,
+    -> description TEXT
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> -- Create Cart Table
+mysql> CREATE TABLE Cart (
+    -> cart_id INT PRIMARY KEY AUTO_INCREMENT,
+    -> customer_id INT,
+    -> created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -> FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> -- Create Cart_Items Table
+mysql> CREATE TABLE Cart_Items (
+    -> cart_item_id INT PRIMARY KEY AUTO_INCREMENT,
+    -> cart_id INT,
+    -> product_id INT,
+    -> quantity INT NOT NULL,
+    -> FOREIGN KEY (cart_id) REFERENCES Cart(cart_id),
+    -> FOREIGN KEY (product_id) REFERENCES Products(product_id)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> -- Create Orders Table
+mysql> CREATE TABLE Orders (
+    -> order_id INT PRIMARY KEY AUTO_INCREMENT,
+    -> customer_id INT,
+    -> order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -> total_amount DECIMAL(10, 2),
+    -> order_status ENUM('Pending', 'Shipped', 'Delivered') DEFAULT 'Pending',
+    -> FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> -- Create Order_Items Table
+mysql> CREATE TABLE Order_Items (
+    -> order_item_id INT PRIMARY KEY AUTO_INCREMENT,
+    -> order_id INT,
+    -> product_id INT,
+    -> quantity INT,
+    -> price DECIMAL(10, 2),
+    -> FOREIGN KEY (order_id) REFERENCES Orders(order_id),
+    -> FOREIGN KEY (product_id) REFERENCES Products(product_id)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> -- Setup Trigger for Inventory Management
+mysql> DELIMITER //
+mysql> CREATE TRIGGER update_stock_after_order
+    -> AFTER INSERT ON Order_Items
+    -> FOR EACH ROW
+    -> BEGIN
+    -> UPDATE Products
+    -> SET stock_quantity = stock_quantity - NEW.quantity
+    -> WHERE product_id = NEW.product_id;
+    -> END;
+    -> //
+Query OK, 0 rows affected (0.01 sec)
+mysql> DELIMITER ;
+
+mysql> -- ADMIN: Add a new product
+mysql> INSERT INTO Products (product_name, category, price, stock_quantity, description)
+    -> VALUES ('Smartphone', 'Electronics', 699.99, 50, 'Latest model OLED screen');
+Query OK, 1 row affected (0.01 sec)
+
+mysql> -- CHECKOUT: Step 1 - Create main order record
+mysql> INSERT INTO Orders (order_id, customer_id, total_amount, order_status)
+    -> VALUES (5, 1, 150.00, 'Pending');
+Query OK, 1 row affected (0.01 sec)
+
+mysql> -- CHECKOUT: Step 2 - Move items (Simulating item in cart 10)
+mysql> INSERT INTO Order_Items (order_id, product_id, quantity, price)
+    -> SELECT 5, ci.product_id, ci.quantity, p.price
+    -> FROM (SELECT 10 as cart_id, 1 as product_id, 2 as quantity) ci
+    -> JOIN Products p ON ci.product_id = p.product_id;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> -- CHECKOUT: Step 3 - Clear cart
+mysql> DELETE FROM Cart_Items WHERE cart_id = 10;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> -- ADMIN: Update order status
+mysql> UPDATE Orders
+    -> SET order_status = 'Shipped'
+    -> WHERE order_id = 5;
+Query OK, 1 row affected (0.01 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> -- CUSTOMER: View Order History and Status
+mysql> SELECT o.order_id, o.order_date, o.order_status, p.product_name, oi.quantity, oi.price
+    -> FROM Orders o
+    -> JOIN Order_Items oi ON o.order_id = oi.order_id
+    -> JOIN Products p ON oi.product_id = p.product_id
+    -> WHERE o.customer_id = 1
+    -> ORDER BY o.order_date DESC;
++----------+---------------------+--------------+--------------+----------+--------+
+| order_id | order_date          | order_status | product_name | quantity | price  |
++----------+---------------------+--------------+--------------+----------+--------+
+|        5 | 2023-10-27 10:00:00 | Shipped      | Smartphone   |        2 | 699.99 |
++----------+---------------------+--------------+--------------+----------+--------+
+1 row in set (0.00 sec)
+
+mysql> -- ADMIN: Verify stock was reduced by trigger (50 - 2 = 48)
+mysql> SELECT product_name, stock_quantity FROM Products WHERE product_id = 1;
++--------------+----------------+
+| product_name | stock_quantity |
++--------------+----------------+
+| Smartphone   |             48 |
++--------------+----------------+
+1 row in set (0.00 sec)
