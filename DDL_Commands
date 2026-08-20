@@ -1,0 +1,371 @@
+Name.      : Raghul S
+Year | Sec : II CSE C
+Roll No    : 24BCS173
+EXP-2      : Implementation of Data Definition Language (DDL) Commands			
+		
+
+
+// DDL COMMANDS FOR TABLE CREATION
+
+1. Location:
+
+SQL> CREATE TABLE Location (
+  2      loc_id INT PRIMARY KEY,
+  3      loc_name VARCHAR(100),
+  4      address VARCHAR(255)
+  5  );
+
+Table created.
+
+SQL> desc Location;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ LOC_ID                                    NOT NULL NUMBER(38)
+ LOC_NAME                                           VARCHAR2(100)
+ ADDRESS                                            VARCHAR2(255)
+
+
+2. Route:
+
+SQL> CREATE TABLE Route (
+  2      route_id INT PRIMARY KEY,
+  3      source INT,
+  4      destination INT,
+  5      distance DECIMAL(10,2),
+  6      FOREIGN KEY (source) REFERENCES Location(loc_id),
+  7      FOREIGN KEY (destination) REFERENCES Location(loc_id)
+  8  );
+
+Table created.
+
+SQL> desc Route;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ ROUTE_ID                                  NOT NULL NUMBER(38)
+ SOURCE                                             NUMBER(38)
+ DESTINATION                                        NUMBER(38)
+ DISTANCE                                           NUMBER(10,2)
+
+3. Bus:
+
+SQL> CREATE TABLE Bus (
+  2      bus_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  3      reg_no VARCHAR2(20),
+  4      type VARCHAR2(50),
+  5      capacity NUMBER,
+  6      staff_id NUMBER,
+  7      FOREIGN KEY (staff_id) REFERENCES Staff(staff_id)
+  8  );
+
+Table created.
+
+SQL> desc Bus;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ BUS_ID                                    NOT NULL NUMBER
+ REG_NO                                             VARCHAR2(20)
+ TYPE                                               VARCHAR2(50)
+ CAPACITY                                           NUMBER
+ STAFF_ID                                           NUMBER
+
+4. Staff:
+
+SQL> CREATE TABLE Staff (
+  2      staff_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  3      name VARCHAR2(100),
+  4      role VARCHAR2(50),
+  5      license_no VARCHAR2(50)
+  6  );
+
+Table created.
+
+SQL> desc Staff;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ STAFF_ID                                  NOT NULL NUMBER
+ NAME                                               VARCHAR2(100)
+ ROLE                                               VARCHAR2(50)
+ LICENSE_NO                                         VARCHAR2(50)
+
+5. Passenger:
+
+SQL> CREATE TABLE Passenger (
+  2      passenger_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  3      name VARCHAR2(100),
+  4      age NUMBER,
+  5      gender VARCHAR2(10),
+  6      contact VARCHAR2(15)
+  7  );
+
+Table created..
+
+SQL> desc Passenger;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ PASSENGER_ID                              NOT NULL NUMBER
+ NAME                                               VARCHAR2(100)
+ AGE                                                NUMBER
+ GENDER                                             VARCHAR2(10)
+ CONTACT                                            VARCHAR2(15)
+
+6. Schedule:
+
+SQL> CREATE TABLE Schedule (
+  2      schedule_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  3      bus_id NUMBER,
+  4      route_id NUMBER,
+  5      dept_time DATE,
+  6      arrival_time DATE,
+  7      travel_date DATE,
+  8      FOREIGN KEY (bus_id) REFERENCES Bus(bus_id),
+  9      FOREIGN KEY (route_id) REFERENCES Route(route_id)
+ 10  );
+
+Table created
+
+
+SQL> desc Schedule;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ SCHEDULE_ID                               NOT NULL NUMBER
+ BUS_ID                                             NUMBER
+ ROUTE_ID                                           NUMBER
+ DEPT_TIME                                          DATE
+ ARRIVAL_TIME                                       DATE
+ TRAVEL_DATE                                        DATE
+
+
+7. GPS_LOG:
+
+SQL> CREATE TABLE GPS_LOG (
+  2      log_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  3      bus_id NUMBER,
+  4      latitude NUMBER(10,8),
+  5      longitude NUMBER(11,8),
+  6      speed NUMBER(5,2),
+  7      log_date DATE,
+  8      log_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  9      FOREIGN KEY (bus_id) REFERENCES Bus(bus_id)
+ 10  );
+
+Table created.
+
+SQL> desc GPS_LOG;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ LOG_ID                                    NOT NULL NUMBER
+ BUS_ID                                             NUMBER
+ LATITUDE                                           NUMBER(10,8)
+ LONGITUDE                                          NUMBER(11,8)
+ SPEED                                              NUMBER(5,2)
+ LOG_DATE                                           DATE
+ LOG_TIMESTAMP                                      TIMESTAMP(6)
+
+
+8. Booking:
+
+SQL> CREATE TABLE Booking (
+  2      booking_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  3      passenger_id NUMBER,
+  4      schedule_id NUMBER,
+  5      seat_no NUMBER,
+  6      status VARCHAR2(20),
+  7      FOREIGN KEY (passenger_id) REFERENCES Passenger(passenger_id),
+  8      FOREIGN KEY (schedule_id) REFERENCES Schedule(schedule_id)
+  9  );
+
+Table created.
+
+SQL> desc Booking;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ BOOKING_ID                                NOT NULL NUMBER
+ PASSENGER_ID                                       NUMBER
+ SCHEDULE_ID                                        NUMBER
+ SEAT_NO                                            NUMBER
+ STATUS                                             VARCHAR2(20)
+
+
+9. Payment
+
+SQL> CREATE TABLE Payment (
+  2      transaction_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  3      booking_id NUMBER,
+  4      method VARCHAR2(50),
+  5      payment_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  6      status VARCHAR2(20),
+  7      FOREIGN KEY (booking_id) REFERENCES Booking(booking_id)
+  8  );
+
+Table created.
+
+SQL> desc Payment;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ TRANSACTION_ID                            NOT NULL NUMBER
+ BOOKING_ID                                         NUMBER
+ METHOD                                             VARCHAR2(50)
+ PAYMENT_TIME                                       TIMESTAMP(6)
+ STATUS                                             VARCHAR2(20)
+
+
+// DDL COMMANDS [ALTER,DROP,INSERT]
+
+ALTER COMMAND:
+
+-- 1. Add email column to Staff
+	ALTER TABLE Staff
+	ADD email VARCHAR(100);
+
+Output: Table altered.
+
+-- 2. Modify capacity size in Bus
+	ALTER TABLE Bus
+	MODIFY capacity INT;
+
+Output: Table altered.
+
+-- 3. Add pincode to Location
+	ALTER TABLE Location
+	ADD pincode INT;
+
+Output: Table altered.
+
+-- 4. Add discount column in Booking
+	ALTER TABLE Booking
+	ADD discount DECIMAL(5,2);
+
+Output: Table altered.
+
+
+DROP COMMAND:
+
+-- 1. Drop column discount from Booking
+	ALTER TABLE Booking
+	DROP COLUMN discount;
+
+Output: Table altered.
+
+
+-- 2. Drop table GPS_Log
+	DROP TABLE GPS_Log;
+
+Output: Table dropped.
+
+-- 3. Drop table Payment
+	DROP TABLE Payment;
+
+Output: Table dropped.
+
+-- 4. Drop table Route
+	DROP TABLE Route;
+
+Output: Table dropped.
+
+// INSERT COMMANDS:
+
+1) LOCATION:
+
+SQL> INSERT INTO Location VALUES (1, 'Chennai', 'Anna Nagar');
+Output: 1 row created.
+
+SQL> INSERT INTO Location VALUES (2, 'Coimbatore', 'Gandhipuram');
+Output: 1 row created.
+
+2) BUS:
+
+SQL> INSERT INTO Bus VALUES (101, 'TN01AB1234', 'AC', 50, 1);
+Output: 1 row created.
+
+SQL> INSERT INTO Bus VALUES (102, 'TN02CD5678', 'Non-AC', 45, 2);
+Output: 1 row created.
+
+3) STAFF:
+
+SQL> INSERT INTO Staff VALUES (1, 'Ravi', 'Driver', 'LIC12345');
+Output: 1 row created.
+
+SQL> INSERT INTO Staff VALUES (2, 'Kumar', 'Conductor', 'LIC67890');
+Output: 1 row created.
+
+4) ROUTE:
+
+SQL> INSERT INTO Route VALUES (201, 'Chennai', 'Madurai', 450);
+Output: 1 row created.
+
+SQL> INSERT INTO Route VALUES (202, 'Coimbatore', 'Salem', 160);
+Output: 1 row created.
+
+5) SCHEDULE:
+
+SQL> INSERT INTO Schedule VALUES (301, 101, 201,
+     TO_DATE('08:00:00','HH24:MI:SS'),
+     TO_DATE('10:00:00','HH24:MI:SS'),
+     TO_DATE('12-02-2026','DD-MM-YYYY'));
+
+Output: 1 row created.
+
+SQL> INSERT INTO Schedule VALUES (302, 102, 202,
+     TO_DATE('18:00:00','HH24:MI:SS'),
+     TO_DATE('22:00:00','HH24:MI:SS'),
+     TO_DATE('12-02-2026','DD-MM-YYYY'));
+
+Output: 1 row created.
+
+6) PASSENGER:
+
+SQL> INSERT INTO Passenger VALUES (1, 'Arun', 22, 'Male', '9876543210');
+Output: 1 row created.
+
+SQL> INSERT INTO Passenger VALUES (2, 'Meena', 21, 'Female', '9123456780');
+Output: 1 row created.
+
+7) BOOKING:
+
+SQL> INSERT INTO Booking VALUES (401, 1, 301, 1, 'Confirmed');
+Output: 1 row created.
+
+SQL> INSERT INTO Booking VALUES (402, 2, 302, 2, 'Pending');
+Output: 1 row created.
+
+8) PAYMENT:
+
+SQL> INSERT INTO Payment VALUES
+     (501, 401, 'UPI',
+      TO_TIMESTAMP('10-02-2026 10:30:00',
+      'DD-MM-YYYY HH24:MI:SS'),
+      'Success');
+
+Output: 1 row created.
+
+SQL> INSERT INTO Payment VALUES
+     (502, 402, 'Card',
+      TO_TIMESTAMP('10-02-2026 11:00:00',
+      'DD-MM-YYYY HH24:MI:SS'),
+      'Success');
+
+Output: 1 row created.
+
+9) GPS_LOG:
+
+SQL> INSERT INTO GPS_LOG VALUES
+     (1, 101, 13.0827, 80.2707, 60,
+      TO_DATE('11-02-2026','DD-MM-YYYY'),
+      TO_TIMESTAMP('11-02-2026 08:30:00',
+      'DD-MM-YYYY HH24:MI:SS'));
+
+Output: 1 row created.
+
+SQL> INSERT INTO GPS_LOG VALUES
+     (2, 102, 11.0168, 76.9558, 55,
+      TO_DATE('11-02-2026','DD-MM-YYYY'),
+      TO_TIMESTAMP('11-02-2026 09:00:00',
+      'DD-MM-YYYY HH24:MI:SS'));
+
+Output: 1 row created.
+
+After inserts:
+
+SQL> COMMIT;
+
+Commit complete.
