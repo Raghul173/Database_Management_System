@@ -18,7 +18,7 @@ Repository for Database Management Systems (DBMS) laboratory practicals, coverin
 | **10** | Database Connectivity using ODBC | Application-to-Database Interface |
 
 ## 🛠️ Tech Stack & Tools
-* **Database Engine:** Oracle SQL / MySQL / PostgreSQL *(Edit this)*
+* **Database Engine:** Oracle SQL / MySQL 
 * **Procedural Extension:** PL/SQL
 * **Connectivity Interface:** ODBC
 
