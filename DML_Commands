@@ -1,0 +1,470 @@
+Name.      : Raghul S
+Year | Sec : II CSE C
+Roll No    : 24BCS173
+EXP-3      : Implementation of Data Manipulation Language (DML) Commands	
+
+
+
+SQL> -- 1) Display all buses:
+SQL> SELECT * FROM Bus;
+
+    BUS_ID REG_NO
+---------- --------------------
+TYPE                                                 CAPACITY   STAFF_ID
+-------------------------------------------------- ---------- ----------
+         1 TN01AB1234
+AC                                                         50          1
+
+         2 TN02CD5678
+Non-AC                                                     45          2
+
+
+SQL>
+SQL> -- 2) Display all staff
+SQL> SELECT * FROM Staff;
+
+  STAFF_ID
+----------
+NAME
+--------------------------------------------------------------------------------
+ROLE
+--------------------------------------------------
+LICENSE_NO
+--------------------------------------------------
+         1
+Ravi
+Driver
+LIC12345
+
+
+  STAFF_ID
+----------
+NAME
+--------------------------------------------------------------------------------
+ROLE
+--------------------------------------------------
+LICENSE_NO
+--------------------------------------------------
+         2
+Kumar
+Conductor
+LIC67890
+
+
+SQL>
+SQL> -- 3) Display all passengers
+SQL> SELECT * FROM Passenger;
+
+PASSENGER_ID
+------------
+NAME
+--------------------------------------------------------------------------------
+       AGE GENDER     CONTACT
+---------- ---------- ---------------
+           2
+Arun
+        22 Male       9876543210
+
+           3
+Meena
+        21 Female     9123456780
+
+PASSENGER_ID
+------------
+NAME
+--------------------------------------------------------------------------------
+       AGE GENDER     CONTACT
+---------- ---------- ---------------
+
+
+SQL>
+SQL> -- 4) Display all routes
+SQL> SELECT * FROM Route;
+
+  ROUTE_ID     SOURCE DESTINATION   DISTANCE
+---------- ---------- ----------- ----------
+       201          1           2        450
+       202          2           1        160
+
+SQL>
+SQL> -- 5) Show buses with capacity > 40
+SQL> SELECT * FROM Bus WHERE capacity > 40;
+
+    BUS_ID REG_NO
+---------- --------------------
+TYPE                                                 CAPACITY   STAFF_ID
+-------------------------------------------------- ---------- ----------
+         1 TN01AB1234
+AC                                                         50          1
+
+         2 TN02CD5678
+Non-AC                                                     45          2
+
+
+SQL>
+SQL> -- 6) Show staff with role = 'Driver'
+SQL> SELECT * FROM Staff WHERE role = 'Driver';
+
+  STAFF_ID
+----------
+NAME
+--------------------------------------------------------------------------------
+ROLE
+--------------------------------------------------
+LICENSE_NO
+--------------------------------------------------
+         1
+Ravi
+Driver
+LIC12345
+
+
+SQL>
+SQL> -- 7) Show payments with status = 'Success'
+SQL> SELECT * FROM Payment WHERE status = 'Success';
+
+TRANSACTION_ID BOOKING_ID METHOD
+-------------- ---------- --------------------------------------------------
+PAYMENT_TIME
+---------------------------------------------------------------------------
+STATUS
+--------------------
+             2          2 Card
+10-FEB-26 11.00.00.000000 AM
+Success
+
+
+SQL>
+SQL> -- 8) Show schedules on a specific date
+SQL> SELECT * FROM Schedule
+  2  WHERE travel_date = TO_DATE('10-02-2026','DD-MM-YYYY');
+
+no rows selected
+
+SQL>
+SQL> -- 9) Show buses ordered by capacity DESC
+SQL> SELECT * FROM Bus ORDER BY capacity DESC;
+
+    BUS_ID REG_NO
+---------- --------------------
+TYPE                                                 CAPACITY   STAFF_ID
+-------------------------------------------------- ---------- ----------
+         1 TN01AB1234
+AC                                                         50          1
+
+         2 TN02CD5678
+Non-AC                                                     45          2
+
+
+SQL>
+SQL> -- 10) Passengers ordered by name
+SQL> SELECT * FROM Passenger ORDER BY name;
+
+PASSENGER_ID
+------------
+NAME
+--------------------------------------------------------------------------------
+       AGE GENDER     CONTACT
+---------- ---------- ---------------
+           2
+Arun
+        22 Male       9876543210
+
+           3
+Meena
+        21 Female     9123456780
+
+PASSENGER_ID
+------------
+NAME
+--------------------------------------------------------------------------------
+       AGE GENDER     CONTACT
+---------- ---------- ---------------
+
+
+SQL>
+SQL> -- 11) Names starting with A
+SQL> SELECT * FROM Passenger WHERE name LIKE 'A%';
+
+PASSENGER_ID
+------------
+NAME
+--------------------------------------------------------------------------------
+       AGE GENDER     CONTACT
+---------- ---------- ---------------
+           2
+Arun
+        22 Male       9876543210
+
+
+SQL>
+SQL> -- 12) Staff name contains 'ra'
+SQL> SELECT * FROM Staff WHERE LOWER(name) LIKE '%ra%';
+
+  STAFF_ID
+----------
+NAME
+--------------------------------------------------------------------------------
+ROLE
+--------------------------------------------------
+LICENSE_NO
+--------------------------------------------------
+         1
+Ravi
+Driver
+LIC12345
+
+
+SQL>
+SQL> -- 13) Routes with distance IN list
+SQL> SELECT * FROM Route WHERE distance IN (100, 200, 300);
+
+no rows selected
+
+SQL>
+SQL> ----------------------------------------------------
+SQL> -- AGGREGATE FUNCTIONS
+SQL> ----------------------------------------------------
+SQL>
+SQL> -- 14) Total number of buses
+SQL> SELECT COUNT(*) AS total_buses FROM Bus;
+
+TOTAL_BUSES
+-----------
+          2
+
+SQL>
+SQL> -- 15) Average capacity
+SQL> SELECT AVG(capacity) AS avg_capacity FROM Bus;
+
+AVG_CAPACITY
+------------
+        47.5
+
+SQL>
+SQL> -- NOTE: Booking table has NO amount column
+SQL> -- Using seat_no instead
+SQL>
+SQL> -- 16) Maximum seat number booked
+SQL> SELECT MAX(seat_no) AS max_seat FROM Booking;
+
+  MAX_SEAT
+----------
+         2
+
+SQL>
+SQL> -- 17) Minimum seat number booked
+SQL> SELECT MIN(seat_no) AS min_seat FROM Booking;
+
+  MIN_SEAT
+----------
+         1
+
+SQL>
+SQL> -- 18) Total seat numbers (for demo)
+SQL> SELECT SUM(seat_no) AS total_seat_sum FROM Booking;
+
+TOTAL_SEAT_SUM
+--------------
+             3
+
+SQL>
+SQL> ----------------------------------------------------
+SQL> -- GROUP BY
+SQL> ----------------------------------------------------
+SQL>
+SQL> -- 19) Bookings per passenger
+SQL> SELECT passenger_id,
+  2  COUNT(*) AS total_bookings
+  3  FROM Booking
+  4  GROUP BY passenger_id;
+
+PASSENGER_ID TOTAL_BOOKINGS
+------------ --------------
+           2              1
+           3              1
+
+SQL>
+SQL> -- 20) Passengers with more than 2 bookings
+SQL> SELECT passenger_id,
+  2  COUNT(*) AS total_bookings
+  3  FROM Booking
+  4  GROUP BY passenger_id
+  5  HAVING COUNT(*) > 2;
+
+no rows selected
+
+SQL>
+SQL> ----------------------------------------------------
+SQL> -- SUBQUERY
+SQL> ----------------------------------------------------
+SQL>
+SQL> -- 21) Buses with capacity > average
+SQL> SELECT * FROM Bus
+  2  WHERE capacity >
+  3  (SELECT AVG(capacity) FROM Bus);
+
+    BUS_ID REG_NO
+---------- --------------------
+TYPE                                                 CAPACITY   STAFF_ID
+-------------------------------------------------- ---------- ----------
+         1 TN01AB1234
+AC                                                         50          1
+
+
+SQL>
+SQL> -- 22) Passenger with highest number of bookings
+SQL> SELECT * FROM Passenger
+  2  WHERE passenger_id IN
+  3  (
+  4    SELECT passenger_id
+  5    FROM Booking
+  6    GROUP BY passenger_id
+  7    HAVING COUNT(*) =
+  8    (
+  9      SELECT MAX(cnt)
+ 10      FROM (
+ 11        SELECT COUNT(*) cnt
+ 12        FROM Booking
+ 13        GROUP BY passenger_id
+ 14      )
+ 15    )
+ 16  );
+
+PASSENGER_ID
+------------
+NAME
+--------------------------------------------------------------------------------
+       AGE GENDER     CONTACT
+---------- ---------- ---------------
+           2
+Arun
+        22 Male       9876543210
+
+           3
+Meena
+        21 Female     9123456780
+
+PASSENGER_ID
+------------
+NAME
+--------------------------------------------------------------------------------
+       AGE GENDER     CONTACT
+---------- ---------- ---------------
+
+
+SQL>
+SQL> ----------------------------------------------------
+SQL> -- DISTINCT
+SQL> ----------------------------------------------------
+SQL>
+SQL> SELECT DISTINCT type FROM Bus;
+
+TYPE
+--------------------------------------------------
+AC
+Non-AC
+
+SQL>
+SQL> ----------------------------------------------------
+SQL> -- INSERT (Identity-safe)
+SQL> ----------------------------------------------------
+SQL>
+SQL> -- 23) Insert new passenger
+SQL> INSERT INTO Passenger
+  2  (name, age, gender, contact)
+  3  VALUES ('Ravi', 22, 'Male', '9876543210');
+
+1 row created.
+
+SQL>
+SQL> ----------------------------------------------------
+SQL> -- UPDATE
+SQL> ----------------------------------------------------
+SQL>
+SQL> -- 24) Update passenger contact
+SQL> UPDATE Passenger
+  2  SET contact = '9999999999'
+  3  WHERE name = 'Ravi';
+
+1 row updated.
+
+SQL>
+SQL> -- 25) Update booking status
+SQL> UPDATE Booking
+  2  SET status = 'CONFIRMED'
+  3  WHERE booking_id = 1;
+
+0 rows updated.
+
+SQL>
+SQL> ----------------------------------------------------
+SQL> -- DELETE
+SQL> ----------------------------------------------------
+SQL>
+SQL> -- 26) Delete passenger
+SQL> DELETE FROM Passenger
+  2  WHERE name = 'Ravi';
+
+1 row deleted.
+
+SQL>
+SQL> ----------------------------------------------------
+SQL> -- DATE-BASED QUERIES
+SQL> ----------------------------------------------------
+SQL>
+SQL> -- 27) Schedules today
+SQL> SELECT * FROM Schedule
+  2  WHERE TRUNC(travel_date) = TRUNC(SYSDATE);
+
+no rows selected
+
+SQL>
+SQL> -- 28) Payments in last 7 days
+SQL> SELECT * FROM Payment
+  2  WHERE payment_time >= SYSDATE - 7;
+
+no rows selected
+
+SQL>
+SQL> ----------------------------------------------------
+SQL> -- STRING FUNCTIONS
+SQL> ----------------------------------------------------
+SQL>
+SQL> -- 29) Names in uppercase
+SQL> SELECT UPPER(name) FROM Passenger;
+
+UPPER(NAME)
+--------------------------------------------------------------------------------
+ARUN
+MEENA
+
+SQL>
+SQL> -- 30) Length of staff names
+SQL> SELECT name, LENGTH(name) FROM Staff;
+
+NAME
+--------------------------------------------------------------------------------
+LENGTH(NAME)
+------------
+Ravi
+           4
+
+Kumar
+           5
+
+
+SQL>
+SQL> ----------------------------------------------------
+SQL> -- ORDER BY
+SQL> ----------------------------------------------------
+SQL>
+SQL> -- 31) Bookings by seat number DESC
+SQL> SELECT * FROM Booking
+  2  ORDER BY seat_no DESC;
+
+BOOKING_ID PASSENGER_ID SCHEDULE_ID    SEAT_NO STATUS
+---------- ------------ ----------- ---------- --------------------
+         2            2           2          2 Pending
+         3            3           1          1 Confirmed
+
