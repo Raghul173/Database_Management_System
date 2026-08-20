@@ -1,0 +1,271 @@
+Name.      : Raghul S
+Year | Sec : II CSE C
+Roll No    : 24BCS173
+EXP-4      : Implementation of JOIN and SET Operations
+
+
+1) Display Cartesian product of Passenger and Bus.
+
+SQL> SELECT P.name, B.reg_no
+  2  FROM Passenger P, Bus B;
+
+NAME
+--------------------------------------------------------------------------------
+REG_NO
+--------------------
+Arun
+TN01AB1234
+
+Arun
+TN02CD5678
+
+Meena
+TN01AB1234
+
+
+NAME
+--------------------------------------------------------------------------------
+REG_NO
+--------------------
+Meena
+TN02CD5678
+
+2) Display distinct Passenge Bus combinations.
+
+SQL> SELECT DISTINCT P.name, B.reg_no
+  2  FROM Passenger P, Bus B;
+
+NAME
+--------------------------------------------------------------------------------
+REG_NO
+--------------------
+Arun
+TN01AB1234
+
+Arun
+TN02CD5678
+
+Meena
+TN01AB1234
+
+
+NAME
+--------------------------------------------------------------------------------
+REG_NO
+--------------------
+Meena
+TN02CD5678
+
+3) Display Passenger details with Booking using Natural Join.
+
+SQL> SELECT name, seat_no, status
+  2  FROM Passenger
+  3  NATURAL JOIN Booking;
+
+NAME
+--------------------------------------------------------------------------------
+   SEAT_NO STATUS
+---------- --------------------
+Arun
+         2 Pending
+
+Meena
+         1 Confirmed
+
+4) Display passenger name and booking details using Inner Join.
+
+SQL> SELECT P.name, B.seat_no, B.status
+  2  FROM Passenger P
+  3  JOIN Booking B
+  4  ON P.passenger_id = B.passenger_id;
+
+NAME
+--------------------------------------------------------------------------------
+   SEAT_NO STATUS
+---------- --------------------
+Arun
+         2 Pending
+
+Meena
+         1 Confirmed
+
+5) Display all passengers and their bookings (Left Join).
+
+SQL> SELECT P.name, B.seat_no, B.status
+  2  FROM Passenger P
+  3  LEFT JOIN Booking B
+  4  ON P.passenger_id = B.passenger_id;
+
+NAME
+--------------------------------------------------------------------------------
+   SEAT_NO STATUS
+---------- --------------------
+Arun
+         2 Pending
+
+Meena
+         1 Confirmed
+
+6) Display all bookings with passenger names (Right Join).
+
+SQL> SELECT P.name, B.seat_no, B.status
+  2  FROM Passenger P
+  3  RIGHT JOIN Booking B
+  4  ON P.passenger_id = B.passenger_id;
+
+NAME
+--------------------------------------------------------------------------------
+   SEAT_NO STATUS
+---------- --------------------
+Arun
+         2 Pending
+
+Meena
+         1 Confirmed
+
+7) Display all passengers and bookings (Full Join).
+
+SQL> SELECT P.name, B.seat_no, B.status
+  2  FROM Passenger P
+  3  FULL JOIN Booking B
+  4  ON P.passenger_id = B.passenger_id;
+
+NAME
+--------------------------------------------------------------------------------
+   SEAT_NO STATUS
+---------- --------------------
+Arun
+         2 Pending
+
+Meena
+         1 Confirmed
+
+
+8) Compare passengers with higher seat numbers (Self Join).
+
+SQL> SELECT A.passenger_id, B.passenger_id
+  2  FROM Booking A, Booking B
+  3  WHERE A.seat_no > B.seat_no
+  4  AND A.booking_id <> B.booking_id;
+
+PASSENGER_ID PASSENGER_ID
+------------ ------------
+           2            3
+
+9) Display passengers with confirmed bookings.
+
+SQL> SELECT P.name, B.status
+  2  FROM Passenger P
+  3  JOIN Booking B
+  4  ON P.passenger_id = B.passenger_id
+  5  WHERE B.status = 'Confirmed';
+
+NAME
+--------------------------------------------------------------------------------
+STATUS
+--------------------
+Meena
+Confirmed
+
+10) Count bookings per passenger
+
+SQL> SELECT P.name, COUNT(B.booking_id) AS total_bookings
+  2  FROM Passenger P
+  3  JOIN Booking B
+  4  ON P.passenger_id = B.passenger_id
+  5  GROUP BY P.name;
+
+NAME
+--------------------------------------------------------------------------------
+TOTAL_BOOKINGS
+--------------
+Arun
+             1
+
+Meena
+             1
+
+11) Passenger bookings sorted by seat number DESC
+
+SQL> SELECT P.name, B.seat_no
+  2  FROM Passenger P
+  3  JOIN Booking B
+  4  ON P.passenger_id = B.passenger_id
+  5  ORDER BY B.seat_no DESC;
+
+NAME
+--------------------------------------------------------------------------------
+   SEAT_NO
+----------
+Arun
+         2
+
+Meena
+         1
+
+12) Total number of bookings
+
+SQL> SELECT COUNT(*) AS total_bookings
+  2  FROM Booking;
+
+TOTAL_BOOKINGS
+--------------
+             2
+
+13) Average seat number booked
+
+SQL> SELECT AVG(seat_no) AS avg_seat
+  2  FROM Booking;
+
+  AVG_SEAT
+----------
+       1.5
+
+14) Passengers with more than one booking
+
+SQL> SELECT passenger_id, COUNT(*) AS total_bookings
+  2  FROM Booking
+  3  GROUP BY passenger_id
+  4  HAVING COUNT(*) > 1;
+
+PASSENGER_ID TOTAL_BOOKINGS
+------------ --------------
+           2              2
+
+
+// SET OPERATIONS
+
+15) Bookings that have payment (UNION)
+
+SQL> SELECT booking_id FROM Booking
+  2  UNION
+  3  SELECT booking_id FROM Payment;
+
+BOOKING_ID
+----------
+         2
+         3
+         5
+         6
+
+16) Bookings with both booking AND payment (INTERSECT)
+
+SQL> SELECT booking_id FROM Booking
+  2  INTERSECT
+  3  SELECT booking_id FROM Payment;
+
+BOOKING_ID
+----------
+         2
+
+17) Bookings without payment (MINUS)
+
+SQL> SELECT booking_id FROM Booking
+  2  MINUS
+  3  SELECT booking_id FROM Payment;
+
+BOOKING_ID
+----------
+         3
+         5
+         6
