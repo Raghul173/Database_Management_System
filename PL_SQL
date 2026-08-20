@@ -1,0 +1,435 @@
+SQL> SET SERVEROUTPUT ON;
+System altered.
+
+SQL> INSERT INTO PASSENGER VALUES (1, 'Raghul');
+1 row created.
+
+SQL> INSERT INTO PASSENGER VALUES (2, 'Kumar');
+1 row created.
+
+SQL> INSERT INTO PASSENGER VALUES (3, 'Arjun');
+1 row created.
+
+SQL> INSERT INTO BOOKING VALUES (401, 1, 101, 2, 'Confirmed');
+1 row created.
+
+SQL> INSERT INTO BOOKING VALUES (402, 2, 102, 5, 'Pending');
+1 row created.
+
+SQL> INSERT INTO BOOKING VALUES (403, 3, 103, 4, 'Confirmed');
+1 row created.
+
+SQL> INSERT INTO PAYMENT VALUES (401, 'Success');
+1 row created.
+
+SQL> INSERT INTO PAYMENT VALUES (402, 'Failed');
+1 row created.
+SQL> COMMIT;
+
+Commit complete.
+
+1. PRINT ALL BOOKINGS
+
+SQL> DECLARE
+  2      CURSOR c_booking IS
+  3          SELECT BOOKING_ID, PASSENGER_ID, SCHEDULE_ID, SEAT_NO, STATUS
+  4          FROM BOOKING;
+  5  BEGIN
+  6      FOR rec IN c_booking LOOP
+  7          DBMS_OUTPUT.PUT_LINE('Booking ID: ' || rec.BOOKING_ID);
+  8          DBMS_OUTPUT.PUT_LINE('Passenger ID: ' || rec.PASSENGER_ID);
+  9          DBMS_OUTPUT.PUT_LINE('Schedule ID: ' || rec.SCHEDULE_ID);
+ 10          DBMS_OUTPUT.PUT_LINE('Seat No: ' || rec.SEAT_NO);
+ 11          DBMS_OUTPUT.PUT_LINE('Status: ' || rec.STATUS);
+ 12          DBMS_OUTPUT.PUT_LINE('-------------------------');
+ 13      END LOOP;
+ 14  END;
+ 15  /
+
+Output:
+
+Booking ID: 401
+Passenger ID: 1
+Schedule ID: 101
+Seat No: 2
+Status: Confirmed
+-------------------------
+Booking ID: 402
+Passenger ID: 2
+Schedule ID: 102
+Seat No: 5
+Status: Pending
+-------------------------
+Booking ID: 403
+Passenger ID: 3
+Schedule ID: 103
+Seat No: 4
+Status: Confirmed
+-------------------------
+
+PL/SQL procedure successfully completed.
+
+2. CONFIRMED BOOKINGS
+
+SQL> DECLARE
+  2      CURSOR c_confirmed IS
+  3          SELECT BOOKING_ID, STATUS FROM BOOKING;
+  4  BEGIN
+  5      FOR rec IN c_confirmed LOOP
+  6          IF rec.STATUS = 'Confirmed' THEN
+  7              DBMS_OUTPUT.PUT_LINE('Booking ID: ' || rec.BOOKING_ID);
+  8          END IF;
+  9      END LOOP;
+ 10  END;
+ 11  /
+
+Booking ID: 401
+Booking ID: 403
+
+PL/SQL procedure successfully completed.
+
+
+3. JOIN DETAILS
+
+
+SQL> DECLARE
+  2      CURSOR c_details IS
+  3          SELECT P.NAME, B.SEAT_NO, B.STATUS
+  4          FROM PASSENGER P
+  5          JOIN BOOKING B ON P.PASSENGER_ID = B.PASSENGER_ID;
+  6  BEGIN
+  7      FOR rec IN c_details LOOP
+  8          DBMS_OUTPUT.PUT_LINE(rec.NAME || ' | Seat: ' || rec.SEAT_NO || ' | Status: ' || rec.STATUS);
+  9      END LOOP;
+ 10  END;
+ 11  /
+
+
+Raghul | Seat: 2 | Status: Confirmed
+Kumar | Seat: 5 | Status: Pending
+Arjun | Seat: 4 | Status: Confirmed
+
+PL/SQL procedure successfully completed.
+
+
+4. COUNT BOOKINGS
+
+
+SQL> DECLARE
+  2      CURSOR c_count IS SELECT BOOKING_ID FROM BOOKING;
+  3      v_count NUMBER := 0;
+  4  BEGIN
+  5      FOR rec IN c_count LOOP
+  6          v_count := v_count + 1;
+  7      END LOOP;
+  8      DBMS_OUTPUT.PUT_LINE('Total Bookings: ' || v_count);
+  9  END;
+ 10  /
+
+
+Total Bookings: 3
+
+PL/SQL procedure successfully completed.
+
+
+5. FILTER SEAT > 3
+
+
+SQL> DECLARE
+  2      CURSOR c_filter IS
+  3          SELECT BOOKING_ID, SEAT_NO
+  4          FROM BOOKING
+  5          WHERE SEAT_NO > 3;
+  6  BEGIN
+  7      FOR rec IN c_filter LOOP
+  8          DBMS_OUTPUT.PUT_LINE('Booking ID: ' || rec.BOOKING_ID || ' Seat No: ' || rec.SEAT_NO);
+  9      END LOOP;
+ 10  END;
+ 11  /
+
+Booking ID: 402 Seat No: 5
+Booking ID: 403 Seat No: 4
+
+PL/SQL procedure successfully completed.
+
+
+6. LONG NAMES
+
+```sql
+SQL> DECLARE
+  2      CURSOR c_passenger IS
+  3          SELECT PASSENGER_ID, NAME FROM PASSENGER;
+  4  BEGIN
+  5      FOR rec IN c_passenger LOOP
+  6          IF LENGTH(rec.NAME) > 5 THEN
+  7              DBMS_OUTPUT.PUT_LINE('Passenger: ' || rec.NAME);
+  8          END IF;
+  9      END LOOP;
+ 10  END;
+ 11  /
+
+Passenger: Raghul
+
+PL/SQL procedure successfully completed.
+
+
+7. SUCCESSFUL PAYMENTS
+
+
+SQL> DECLARE
+  2      CURSOR c_payment IS
+  3          SELECT BOOKING_ID, STATUS FROM PAYMENT;
+  4  BEGIN
+  5      FOR rec IN c_payment LOOP
+  6          IF rec.STATUS = 'Success' THEN
+  7              DBMS_OUTPUT.PUT_LINE('Booking ' || rec.BOOKING_ID || ' Payment Successful');
+  8          END IF;
+  9      END LOOP;
+ 10  END;
+ 11  /
+
+Booking 401 Payment Successful
+
+PL/SQL procedure successfully completed.
+
+
+8. EXCEPTION
+
+SQL> DECLARE
+  2      CURSOR c_pass IS SELECT NAME FROM PASSENGER;
+  3  BEGIN
+  4      FOR rec IN c_pass LOOP
+  5          DBMS_OUTPUT.PUT_LINE(rec.NAME);
+  6      END LOOP;
+  7  EXCEPTION
+  8      WHEN OTHERS THEN
+  9          DBMS_OUTPUT.PUT_LINE('Error occurred');
+ 10  END;
+ 11  /
+
+Raghul
+Kumar
+Arjun
+
+PL/SQL procedure successfully completed.
+
+
+9. USER DEFINED EXCEPTION
+
+
+SQL> DECLARE
+  2      v_name PASSENGER.NAME%TYPE;
+  3  BEGIN
+  4      SELECT NAME INTO v_name FROM PASSENGER WHERE PASSENGER_ID = 100;
+  5      DBMS_OUTPUT.PUT_LINE('Passenger: ' || v_name);
+  6  EXCEPTION
+  7      WHEN NO_DATA_FOUND THEN
+  8          DBMS_OUTPUT.PUT_LINE('Passenger not found');
+  9  END;
+ 10  /
+
+Passenger not found
+
+PL/SQL procedure successfully completed.
+
+
+10. AVERAGE
+
+
+SQL> DECLARE
+  2      v_total NUMBER;
+  3      v_count NUMBER;
+  4      v_avg NUMBER;
+  5  BEGIN
+  6      SELECT SUM(SEAT_NO), COUNT(*) INTO v_total, v_count FROM BOOKING;
+  7      v_avg := v_total / v_count;
+  8      DBMS_OUTPUT.PUT_LINE('Average Seat No: ' || v_avg);
+  9  END;
+ 10  /
+
+Average Seat No: 3.66666667
+
+PL/SQL procedure successfully completed.
+
+
+11. REVERSE
+
+
+SQL> DECLARE
+  2      v_name PASSENGER.NAME%TYPE;
+  3      v_rev VARCHAR2(50) := '';
+  4  BEGIN
+  5      SELECT NAME INTO v_name FROM PASSENGER WHERE PASSENGER_ID = 1;
+  6      FOR i IN REVERSE 1..LENGTH(v_name) LOOP
+  7          v_rev := v_rev || SUBSTR(v_name, i, 1);
+  8      END LOOP;
+  9      DBMS_OUTPUT.PUT_LINE('Original: ' || v_name);
+ 10      DBMS_OUTPUT.PUT_LINE('Reversed: ' || v_rev);
+ 11  END;
+ 12  /
+
+Original: Raghul
+Reversed: luhgaR
+
+PL/SQL procedure successfully completed.
+
+
+12. SHORTEST NAME
+
+
+SQL> DECLARE
+  2      v_short VARCHAR2(50);
+  3      v_len NUMBER := 999;
+  4  BEGIN
+  5      FOR rec IN (SELECT NAME FROM PASSENGER) LOOP
+  6          IF LENGTH(rec.NAME) < v_len THEN
+  7              v_len := LENGTH(rec.NAME);
+  8              v_short := rec.NAME;
+  9          END IF;
+ 10      END LOOP;
+ 11      DBMS_OUTPUT.PUT_LINE('Shortest Name: ' || v_short);
+ 12  END;
+ 13  /
+
+Shortest Name: Kumar
+
+PL/SQL procedure successfully completed.
+
+
+13. UPDATE
+
+
+SQL> BEGIN
+  2      UPDATE BOOKING SET STATUS = 'Cancelled' WHERE BOOKING_ID = 402;
+  3      IF SQL%FOUND THEN
+  4          DBMS_OUTPUT.PUT_LINE('Rows updated: ' || SQL%ROWCOUNT);
+  5      END IF;
+  6  END;
+  7  /
+
+Rows updated: 1
+
+PL/SQL procedure successfully completed.
+
+
+14. DELETE
+
+
+SQL> BEGIN
+  2      DELETE FROM BOOKING WHERE BOOKING_ID = 403;
+  3      IF SQL%FOUND THEN
+  4          DBMS_OUTPUT.PUT_LINE('Booking deleted');
+  5      END IF;
+  6      ROLLBACK;
+  7  END;
+  8  /
+
+Booking deleted
+
+PL/SQL procedure successfully completed.
+
+
+15. USER INPUT
+
+
+SQL> DECLARE
+  2      v_name PASSENGER.NAME%TYPE;
+  3      v_rev VARCHAR2(50) := '';
+  4      v_id NUMBER := &enter_passenger_id;
+  5  BEGIN
+  6      SELECT NAME INTO v_name FROM PASSENGER WHERE PASSENGER_ID = v_id;
+  7      FOR i IN REVERSE 1..LENGTH(v_name) LOOP
+  8          v_rev := v_rev || SUBSTR(v_name, i, 1);
+  9      END LOOP;
+ 10      DBMS_OUTPUT.PUT_LINE('Original: ' || v_name);
+ 11      DBMS_OUTPUT.PUT_LINE('Reversed: ' || v_rev);
+ 12  END;
+ 13  /
+
+Enter value for enter_passenger_id: 1
+
+Original: Raghul
+Reversed: luhgaR
+
+PL/SQL procedure successfully completed.
+
+
+
+SELF - III
+
+Table creation:
+
+CREATE TABLE employees (
+    employee_id   NUMBER PRIMARY KEY,
+    first_name    VARCHAR2(50),
+    residence     VARCHAR2(50),
+    salary        NUMBER(10, 2),
+    department_id NUMBER
+);
+
+Data Insertion:
+
+INSERT INTO employees VALUES (101, 'Arun', 'Sivakasi', 5000, 10);
+INSERT INTO employees VALUES (102, 'Bala', 'Sivakasi', 4000, 10);
+INSERT INTO employees VALUES (103, 'Chandru', 'Madurai', 6000, 20);
+INSERT INTO employees VALUES (104, 'Devi', 'Chennai', 7000, 20);
+INSERT INTO employees VALUES (105, 'Eshwar', 'Sivakasi', 8000, 20);
+
+COMMIT;
+
+Command:
+
+DECLARE
+    emp_count NUMBER := 0;
+    CURSOR emp_cursor IS
+        SELECT 1 FROM employees e
+        WHERE residence = 'Sivakasi'
+          AND salary > (SELECT AVG(salary) FROM employees WHERE department_id = e.department_id);
+BEGIN
+    FOR emp IN emp_cursor LOOP
+        emp_count := emp_count + 1;
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('Count: ' || emp_count);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/   
+
+Output: 
+
+Count: 2
+
+
+PL/SQL without Query:
+
+1. Palindrome:
+
+DECLARE
+  str      VARCHAR2(100) := 'madam';  -- Input string
+  reversed VARCHAR2(100) := '';
+  i        INTEGER;
+BEGIN
+  
+  FOR i IN REVERSE 1..LENGTH(str) LOOP
+    reversed := reversed || SUBSTR(str, i, 1);
+  END LOOP;
+
+  IF str = reversed THEN
+    DBMS_OUTPUT.PUT_LINE(str || ' is a palindrome');
+  ELSE
+    DBMS_OUTPUT.PUT_LINE(str || ' is not a palindrome');
+  END IF;
+END;   
+
+2. Odd or Even:
+
+DECLARE
+  num NUMBER := 7; 
+BEGIN
+  IF MOD(num, 2) = 0 THEN
+    DBMS_OUTPUT.PUT_LINE(num || ' is even');
+  ELSE
+    DBMS_OUTPUT.PUT_LINE(num || ' is odd');
+  END IF;
+END;   
