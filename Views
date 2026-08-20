@@ -1,0 +1,199 @@
+EXP-6 : Implementation of Views
+
+Name : Raghul S
+Year | Sec : II CSE C
+Roll No : 24BCS173
+
+1. Create a view to display passenger booking details
+
+SQL> CREATE VIEW passenger_booking_view AS
+  2  SELECT P.passenger_id, P.name, B.booking_id, B.seat_no, B.status
+  3  FROM Passenger P
+  4  JOIN Booking B
+  5  ON P.passenger_id = B.passenger_id;
+
+View created.
+
+2. Display the view
+
+SQL> SELECT * FROM passenger_booking_view;
+
+PASSENGER_ID  NAME      BOOKING_ID  SEAT_NO  STATUS
+------------- --------- ----------- -------- ----------
+1             Arun      1           12       Confirmed
+2             Meena     2           5        Confirmed
+3             Ravi      3           8        Pending
+
+3. Create a view for bus and staff details
+
+SQL> CREATE VIEW bus_staff_view AS
+  2  SELECT B.bus_id, B.reg_no, B.capacity,
+  3         S.name AS staff_name, S.role
+  4  FROM Bus B
+  5  JOIN Staff S
+  6  ON B.staff_id = S.staff_id;
+
+View created.
+
+4. Display the bus staff view
+
+SQL> SELECT * FROM bus_staff_view;
+
+BUS_ID  REG_NO        CAPACITY  STAFF_NAME  ROLE
+------- ------------- --------- ----------- ----------
+1       TN01AB1234    50        Kumar       Driver
+2       TN02CD5678    45        Ramesh      Conductor
+
+5. Create a view for passenger schedules
+
+SQL> CREATE VIEW passenger_schedule_view AS
+  2  SELECT P.name,
+  3         S.schedule_id,
+  4         S.travel_date,
+  5         S.dept_time
+  6  FROM Passenger P
+  7  JOIN Booking B
+  8  ON P.passenger_id = B.passenger_id
+  9  JOIN Schedule S
+ 10  ON B.schedule_id = S.schedule_id;
+
+View created.
+
+6. Display the passenger schedule view
+
+SQL> SELECT * FROM passenger_schedule_view;
+
+NAME      SCHEDULE_ID  TRAVEL_DATE  DEPT_TIME
+--------- ------------ ------------ ---------
+Arun      101          12-FEB-26    08:00
+Meena     102          13-FEB-26    09:30
+
+7. Create a view for booking payment details
+
+SQL> CREATE VIEW payment_view AS
+  2  SELECT B.booking_id, P.method, P.status
+  3  FROM Booking B
+  4  JOIN Payment P
+  5  ON B.booking_id = P.booking_id;
+
+View created.
+
+8. Display payment view
+
+SQL> SELECT * FROM payment_view;
+
+BOOKING_ID  METHOD  STATUS
+----------- ------- ----------
+1           UPI     Paid
+2           Card    Paid
+3           Cash    Pending
+
+9. Create a view for high capacity buses
+
+SQL> CREATE VIEW high_capacity_bus AS
+  2  SELECT bus_id, reg_no, capacity
+  3  FROM Bus
+  4  WHERE capacity > 40;
+
+View created.
+
+10. Display high capacity buses
+
+SQL> SELECT * FROM high_capacity_bus;
+
+BUS_ID  REG_NO        CAPACITY
+------- ------------- ---------
+1       TN01AB1234    50
+2       TN02CD5678    45
+
+11. Create view for confirmed bookings
+
+SQL> CREATE VIEW confirmed_booking_view AS
+  2  SELECT booking_id, passenger_id, seat_no
+  3  FROM Booking
+  4  WHERE status = 'Confirmed';
+
+View created.
+
+12. Display confirmed bookings
+
+SQL> SELECT * FROM confirmed_booking_view;
+
+BOOKING_ID  PASSENGER_ID  SEAT_NO
+----------- ------------- --------
+1           1             12
+2           2             5
+
+13. Update data through view
+
+SQL> UPDATE confirmed_booking_view
+  2  SET seat_no = 3
+  3  WHERE booking_id = 1;
+
+1 row updated.
+
+14. Insert data using view
+
+SQL> INSERT INTO confirmed_booking_view
+  2  VALUES (5, 1, 4);
+
+1 row created.
+
+15. Create view using aggregate function
+
+SQL> CREATE VIEW passenger_booking_count AS
+  2  SELECT passenger_id, COUNT(*) AS total_bookings
+  3  FROM Booking
+  4  GROUP BY passenger_id;
+
+View created.
+
+16. Display passenger booking count
+
+SQL> SELECT * FROM passenger_booking_count;
+
+PASSENGER_ID  TOTAL_BOOKINGS
+------------- ---------------
+1             2
+2             1
+3             1
+
+17. Create view for route information
+
+SQL> CREATE VIEW route_view AS
+
+  2  SELECT route_id, source, destination, distance
+  3  FROM Route;
+
+View created.
+
+18. Display route view
+
+SQL> SELECT * FROM route_view;
+
+ROUTE_ID  SOURCE     DESTINATION  DISTANCE
+--------  ---------- ------------ --------
+201       Madurai    Chennai      450
+202       Madurai    Trichy       135
+
+19. Drop a view
+
+SQL> DROP VIEW route_view;
+
+View dropped.
+
+20. List all views
+
+SQL> SELECT view_name
+  2  FROM user_views;
+
+VIEW_NAME
+------------------------------
+PASSENGER_BOOKING_VIEW
+BUS_STAFF_VIEW
+PASSENGER_SCHEDULE_VIEW
+PAYMENT_VIEW
+HIGH_CAPACITY_BUS
+CONFIRMED_BOOKING_VIEW
+PASSENGER_BOOKING_COUNT
+
