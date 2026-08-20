@@ -1,0 +1,353 @@
+EXP-8: TRIGGERS  COMPLETE SQL TERMINAL EXECUTION
+
+1. TRIGGER: Prevent NULL Passenger ID
+
+
+SQL> CREATE OR REPLACE TRIGGER trg_before_insert_booking
+  2  BEFORE INSERT ON BOOKING
+  3  FOR EACH ROW
+  4  BEGIN
+  5      IF :NEW.PASSENGER_ID IS NULL THEN
+  6          RAISE_APPLICATION_ERROR(-20001,'Passenger ID cannot be NULL');
+  7      END IF;
+  8  END;
+  9  /
+
+Trigger created.
+
+SQL> SELECT OBJECT_NAME
+  2  FROM USER_OBJECTS
+  3  WHERE OBJECT_TYPE = 'TRIGGER';
+
+OBJECT_NAME
+------------------------------
+TRG_BEFORE_INSERT_BOOKING
+
+1 row selected.
+
+SQL> DESC BOOKING;
+
+ Name            Null?    Type
+ ------------------------- -------- ----------------------------
+ BOOKING_ID      NOT NULL NUMBER
+ PASSENGER_ID             NUMBER
+ SCHEDULE_ID              NUMBER
+ SEAT_NO                  NUMBER
+ STATUS                   VARCHAR2(20)
+
+SQL> INSERT INTO BOOKING(BOOKING_ID,SCHEDULE_ID,SEAT_NO,STATUS)
+  2  VALUES (401,301,1,'Confirmed');
+
+ERROR at line 1:
+ORA-20001: Passenger ID cannot be NULL
+ORA-06512: at "DBMS_LAB.TRG_BEFORE_INSERT_BOOKING", line 3
+ORA-04088: error during execution of trigger 'DBMS_LAB.TRG_BEFORE_INSERT_BOOKING'
+
+
+2. TRIGGER: Auto Confirm Booking
+
+
+SQL> CREATE OR REPLACE TRIGGER trg_after_insert_payment
+  2  AFTER INSERT ON PAYMENT
+  3  FOR EACH ROW
+  4  BEGIN
+  5      UPDATE BOOKING
+  6      SET STATUS = 'Confirmed'
+  7      WHERE BOOKING_ID = :NEW.BOOKING_ID
+  8        AND :NEW.STATUS = 'Success';
+  9  END;
+ 10  /
+
+Trigger created.
+
+SQL> INSERT INTO PAYMENT VALUES
+  2  (501, 401, 'UPI',
+  3   TO_TIMESTAMP('01-04-2026 10:30:00','DD-MM-YYYY HH24:MI:SS'),
+  4   'Success');
+
+1 row created.
+
+SQL> SELECT * FROM BOOKING;
+
+BOOKING_ID PASSENGER_ID SCHEDULE_ID SEAT_NO STATUS
+---------- ------------ ----------- ------- --------------------
+401        1            301         1       Confirmed
+402        2            302         2       Pending
+
+2 rows selected.
+
+
+3. TRIGGER: Gender Update Restriction
+
+
+SQL> CREATE OR REPLACE TRIGGER trg_before_update_gender
+  2  BEFORE UPDATE OF GENDER ON PASSENGER
+  3  FOR EACH ROW
+  4  BEGIN
+  5      IF :OLD.GENDER <> :NEW.GENDER THEN
+  6          RAISE_APPLICATION_ERROR(-20004,'Gender cannot be changed');
+  7      END IF;
+  8  END;
+  9  /
+
+Trigger created.
+
+SQL> UPDATE PASSENGER SET GENDER='Female' WHERE PASSENGER_ID=1;
+
+ERROR at line 1:
+ORA-20004: Gender cannot be changed
+ORA-06512: at "DBMS_LAB.TRG_BEFORE_UPDATE_GENDER", line 3
+ORA-04088: error during execution of trigger 'DBMS_LAB.TRG_BEFORE_UPDATE_GENDER'
+
+
+4. TRIGGER: Prevent Seat Overbooking
+
+
+SQL> CREATE OR REPLACE TRIGGER trg_before_insert_seat
+  2  BEFORE INSERT ON BOOKING
+  3  FOR EACH ROW
+  4  DECLARE
+  5      v_count NUMBER;
+  6  BEGIN
+  7      SELECT COUNT(*) INTO v_count
+  8      FROM BOOKING
+  9      WHERE SCHEDULE_ID = :NEW.SCHEDULE_ID
+ 10        AND SEAT_NO = :NEW.SEAT_NO
+ 11        AND STATUS <> 'Cancelled';
+ 12      IF v_count > 0 THEN
+ 13          RAISE_APPLICATION_ERROR(-20005,'Seat already booked for this schedule');
+ 14      END IF;
+ 15  END;
+ 16  /
+
+Trigger created.
+
+SQL> SELECT OBJECT_NAME
+  2  FROM USER_OBJECTS
+  3  WHERE OBJECT_TYPE = 'TRIGGER';
+
+OBJECT_NAME
+----------------------------------------
+TRG_BEFORE_INSERT_BOOKING
+TRG_AFTER_INSERT_PAYMENT
+TRG_BEFORE_UPDATE_GENDER
+TRG_BEFORE_INSERT_SEAT
+
+4 rows selected.
+
+SQL> INSERT INTO BOOKING VALUES (403, 2, 301, 1, 'Pending');
+
+ERROR at line 1:
+ORA-20005: Seat already booked for this schedule
+ORA-06512: at "DBMS_LAB.TRG_BEFORE_INSERT_SEAT", line 10
+ORA-04088: error during execution of trigger 'DBMS_LAB.TRG_BEFORE_INSERT_SEAT'
+
+
+5. DELETE CONTROL TRIGGERS
+
+
+SQL> CREATE OR REPLACE TRIGGER trg_before_delete_passenger
+  2  BEFORE DELETE ON PASSENGER
+  3  FOR EACH ROW
+  4  BEGIN
+  5      DELETE FROM BOOKING
+  6      WHERE PASSENGER_ID = :OLD.PASSENGER_ID;
+  7  END;
+  8  /
+
+Trigger created.
+
+SQL> CREATE OR REPLACE TRIGGER trg_before_delete_payment
+  2  BEFORE DELETE ON PAYMENT
+  3  FOR EACH ROW
+  4  BEGIN
+  5      IF :OLD.TRANSACTION_ID <> 502 THEN
+  6          RAISE_APPLICATION_ERROR(-20006,'Delete not allowed for this payment');
+  7      END IF;
+  8  END;
+  9  /
+
+Trigger created.
+
+SQL> DELETE FROM PAYMENT WHERE TRANSACTION_ID=501;
+
+ERROR at line 1:
+ORA-20006: Delete not allowed for this payment
+ORA-06512: at "DBMS_LAB.TRG_BEFORE_DELETE_PAYMENT", line 3
+ORA-04088: error during execution of trigger 'DBMS_LAB.TRG_BEFORE_DELETE_PAYMENT'
+
+
+6. VIEW + INSTEAD OF TRIGGER
+
+
+SQL> CREATE VIEW PASSENGER_BOOKING_VIEW AS
+  2  SELECT P.PASSENGER_ID, P.NAME, B.SEAT_NO, B.STATUS
+  3  FROM PASSENGER P
+  4  JOIN BOOKING B
+  5  ON P.PASSENGER_ID = B.PASSENGER_ID;
+
+View created.
+
+SQL> SELECT * FROM PASSENGER_BOOKING_VIEW;
+
+PASSENGER_ID NAME      SEAT_NO STATUS
+------------ --------- ------- --------------------
+1            Arun      1       Confirmed
+2            Meena     2       Pending
+3            Karthik   3       Confirmed
+4            Priya     4       Confirmed
+5            Suresh    5       Pending
+
+5 rows selected.
+
+SQL> CREATE SEQUENCE BOOKING_SEQ START WITH 405 INCREMENT BY 1 NOCACHE NOCYCLE;
+
+Sequence created.
+
+SQL> CREATE OR REPLACE TRIGGER trg_instead_of_insert
+  2  INSTEAD OF INSERT ON PASSENGER_BOOKING_VIEW
+  3  FOR EACH ROW
+  4  BEGIN
+  5      INSERT INTO PASSENGER (PASSENGER_ID, NAME)
+  6      VALUES (:NEW.PASSENGER_ID, :NEW.NAME);
+  7
+  8      INSERT INTO BOOKING (BOOKING_ID, PASSENGER_ID, SEAT_NO, STATUS)
+  9      VALUES (BOOKING_SEQ.NEXTVAL, :NEW.PASSENGER_ID, :NEW.SEAT_NO, :NEW.STATUS);
+ 10  END;
+ 11  /
+
+Trigger created.
+
+SQL> SELECT TRIGGER_NAME FROM USER_TRIGGERS;
+
+TRIGGER_NAME
+----------------------------------------
+TRG_BEFORE_INSERT_BOOKING
+TRG_AFTER_INSERT_PAYMENT
+TRG_BEFORE_UPDATE_GENDER
+TRG_BEFORE_INSERT_SEAT
+TRG_BEFORE_DELETE_PASSENGER
+TRG_BEFORE_DELETE_PAYMENT
+TRG_INSTEAD_OF_INSERT
+
+7 rows selected.
+
+SQL> INSERT INTO PASSENGER_BOOKING_VIEW
+  2  VALUES (6, 'Raghul', 6, 'Confirmed');
+
+1 row created.
+
+SQL> SELECT * FROM PASSENGER;
+
+PASSENGER_ID NAME
+------------ ----------
+1            Arun
+2            Meena
+3            Karthik
+4            Priya
+5            Suresh
+6            Raghul
+
+6 rows selected.
+
+SQL> SELECT * FROM BOOKING;
+
+BOOKING_ID PASSENGER_ID SCHEDULE_ID SEAT_NO STATUS
+---------- ------------ ----------- ------- --------------------
+401        1            301         1       Confirmed
+402        2            302         2       Pending
+403        3            301         3       Confirmed
+404        4            302         4       Confirmed
+405        5            301         5       Pending
+406        6            NULL        6       Confirmed
+
+6 rows selected.
+
+SQL> UPDATE BOOKING SET SCHEDULE_ID=301 WHERE BOOKING_ID=406;
+
+1 row updated.
+
+SQL> SELECT * FROM BOOKING WHERE BOOKING_ID=406;
+
+BOOKING_ID PASSENGER_ID SCHEDULE_ID SEAT_NO STATUS
+---------- ------------ ----------- ------- --------------------
+406        6            301         6       Confirmed
+
+1 row selected.
+
+SQL> SPOOL OFF;
+
+Spool off.
+
+
+A) A)	Write a code in PL/SQL to create a trigger that validates the availability of items before allowing an order to be placed, considering stock levels and pending orders.
+
+The following trigger assumes two tables: Products (holding stock levels) and Orders (storing order details)
+
+-- Supporting Table Structure
+CREATE TABLE Products (
+    product_id NUMBER PRIMARY KEY,
+    product_name VARCHAR2(100),
+    stock_quantity NUMBER
+);
+
+CREATE TABLE Orders (
+    order_id NUMBER PRIMARY KEY,
+    product_id NUMBER REFERENCES Products(product_id),
+    order_quantity NUMBER,
+    status VARCHAR2(20) -- e.g., 'Pending', 'Completed'
+);
+
+Command for Trigger:
+
+CREATE OR REPLACE TRIGGER Validate_Order_Availability
+BEFORE INSERT ON Orders
+FOR EACH ROW
+DECLARE
+    v_current_stock NUMBER;
+    v_pending_orders NUMBER;
+BEGIN
+    -- 1. Get current physical stock
+    SELECT stock_quantity INTO v_current_stock 
+    FROM Products WHERE product_id = :NEW.product_id;
+
+    -- 2. Sum up existing order quantities for this product
+    SELECT NVL(SUM(order_quantity), 0) INTO v_pending_orders 
+    FROM Orders WHERE product_id = :NEW.product_id;
+
+    -- 3. Validation logic
+    IF (v_current_stock - v_pending_orders - :NEW.order_quantity) < 0 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Insufficient stock. Available: ' 
+            || (v_current_stock - v_pending_orders));
+    END IF;
+END;
+/
+
+
+B) B)	Design a trigger that sends an email notification to a predefined address whenever an error occurs during a specific operation.
+
+CREATE OR REPLACE TRIGGER Email_On_Error
+AFTER SERVERERROR ON SCHEMA
+DECLARE
+    v_error_msg VARCHAR2(4000);
+    v_user      VARCHAR2(30);
+BEGIN
+    -- 1. Capture the error message and the user who caused it
+    v_error_msg := DBMS_UTILITY.FORMAT_ERROR_STACK;
+    v_user      := SYS_CONTEXT('USERENV', 'SESSION_USER');
+
+    -- 2. Send the email notification
+    UTL_MAIL.SEND(
+        sender     => 'database_system@yourdomain.com',
+        recipients => 'admin_alerts@yourdomain.com', -- The predefined address
+        subject    => 'Critical Database Error in Schema: ' || v_user,
+        message    => 'An error occurred at ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI:SS') || 
+                      CHR(10) || 'User: ' || v_user || 
+                      CHR(10) || 'Error Detail: ' || v_error_msg
+    );
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Prevent the trigger from crashing the entire database if mail fails
+        NULL; 
+END;
+/
